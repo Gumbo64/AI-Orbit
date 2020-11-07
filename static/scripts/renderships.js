@@ -80,7 +80,7 @@ function getstates(){
     }else{heldlastmanage(80,false);}
     // console.log(gamearea.keys)
     inputs = [left,right,up,down,shoot];
-    socket.emit('staterequest',inputs);
+    // socket.emit('staterequest',inputs);
 }
 
 heldlast = {};
@@ -394,7 +394,7 @@ function startGame() {
         }
     }
     // structure
-    socket.emit('newuser',[username,structure]);
+    // socket.emit('newuser',[username,structure]);
     bullets = {};
     ships = {};
     gamearea.stop();

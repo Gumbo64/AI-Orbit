@@ -9,6 +9,8 @@ plt.ion()
 def simpleships():
     newships = {}
     for key, a in enumerate(ships):
+        # if key > 5:
+        #     break
         newships[key]={'input':ships[key].input,'x':ships[key].body.position.x, 'y': ships[key].body.position.y, 'angle':ships[key].body.angle, 'mX':ships[key].body.velocity.x,'mY':ships[key].body.velocity.y, 'mA':ships[key].body.angular_velocity,'username':ships[key].username,'colour':key,'structure':ships[key].structure}
 
     # print(newships)
@@ -311,6 +313,7 @@ def run_car(genomes, config):
 
         # Update car and fitness
         remain_ships = 0
+        
         update()
         for i, ship in enumerate(ships):
             reward,done = calculatereward(ship)
@@ -324,7 +327,7 @@ def run_car(genomes, config):
                 nets.pop(ships.index(ship))
                 genomes.pop(ships.index(ship))
                 ships.pop(ships.index(ship))
-                
+        # print(remain_ships)
                 
         
         # check
@@ -335,7 +338,10 @@ def run_car(genomes, config):
         if mindistance<=2000:
             mindistance += 0.4
         steps +=1
-        socketio.emit('states',simpleships())
+        try:
+            socketio.emit('states',simpleships(),broadcast=True)
+        except:
+            print('Emit error')
         
         
     
@@ -390,7 +396,7 @@ def run(config_file):
 from threading import Lock
 from flask import Flask, render_template, session, request,     copy_current_request_context
 from flask_socketio import SocketIO, emit, join_room, leave_room,     close_room, rooms, disconnect
-
+import logging
 # Set this variable to "threading", "eventlet" or "gevent" to test the
 # different async modes, or leave it set to None for the application to choose
 # the best option based on installed packages.
@@ -398,7 +404,9 @@ async_mode = None
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app, async_mode=async_mode)
+my_logger = logging.getLogger('werkzeug')
+my_logger.setLevel(logging.ERROR)
+socketio = SocketIO(app, async_mode=async_mode,log = my_logger,logger=False, engineio_logger=False)
 thread = None
 thread_lock = Lock()
 
@@ -421,6 +429,9 @@ def test_connect():
     with thread_lock:
         if thread is None:
             thread = socketio.start_background_task(background_thread)
+logging.getLogger('socketio').setLevel(logging.ERROR)
+logging.getLogger('engineio').setLevel(logging.ERROR)
+
 if __name__ == '__main__':
     socketio.run(app)
 

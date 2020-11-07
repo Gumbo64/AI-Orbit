@@ -187,7 +187,7 @@ def update():
         # print(ships[key].input)
         left,right,up,down,spacepress = ships[key].input
         if up:
-            ships[key].body.apply_impulse_at_local_point((0,-30), (0,0))
+            ships[key].body.apply_impulse_at_local_point((0,-300), (0,0))
         if left:
             ships[key].body.angular_velocity += -0.01
         else:
@@ -209,11 +209,12 @@ def update():
             ships[key].body.velocity = Vec2d(0,0)
             ships[key].body.angular_velocity = 0
             ships[key].body.angle = 0
-        if ships[key].body.angular_velocity > 0.3:
-            ships[key].body.angular_velocity = 0.3
-        else:
-            if ships[key].body.angular_velocity < -0.3:
-                ships[key].body.angular_velocity = -0.3
+        
+        # if ships[key].body.angular_velocity > 0.3:
+        #     ships[key].body.angular_velocity = 0.3
+        # else:
+        #     if ships[key].body.angular_velocity < -0.3:
+        #         ships[key].body.angular_velocity = -0.3
     space.step(1)
  
 import pygame
@@ -237,14 +238,10 @@ def pyrender():
     global scalediv
     centrex = 500
     centrey = 200
-    # for event in pygame.event.get():
-    #     if event.type == QUIT or \
-    #         event.type == KEYDOWN and (event.key in [K_ESCAPE, K_q]): 
-    #         exit()
-    # screen.fill(pygame.color.THECOLORS["black"])
-    # global draw_options
-    # space.debug_draw(draw_options)
-    # pygame.display.flip()
+    artmode = True
+    if not artmode:
+        screen.fill(pygame.color.THECOLORS["black"])
+
     for planet in planets:
         pygame.draw.circle(screen,(100,100,100),(int(planet.body.position.x/scalediv)+centrex,int(planet.body.position.y/scalediv+centrey)),int(planet.radius/scalediv))
     for ship in ships:
@@ -299,7 +296,8 @@ def run_car(genomes, config):
     
     steps = 0
     maxstep = 300_000
-    while steps <= maxstep:
+    forever = False
+    while forever or steps <= maxstep:
 
         if steps == maxstep:
             finished = 10_000
@@ -309,6 +307,9 @@ def run_car(genomes, config):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit(0)
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    screen.fill(pygame.color.THECOLORS["black"])
         pyrender()
 
         # Input my data and get result from network

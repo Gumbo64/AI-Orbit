@@ -1,30 +1,3 @@
-import matplotlib.pyplot as plt
-import matplotlib
- 
-is_ipython = 'inline' in matplotlib.get_backend()
-if is_ipython:
-    from IPython import display
- 
-plt.ion()
-def plot_durations(episode_scores):
-    plt.figure(2)
-    plt.clf()
-    scores_t = T.tensor(episode_scores, dtype=T.float)
-    plt.title('Training...')
-    plt.xlabel('Episode')
-    plt.ylabel('Score')
-    # plt.plot(scores_t.numpy())
-    # Take 100 episode averages and plot them too
-    if len(scores_t) >= 100:
-        means = scores_t.unfold(0, 100, 1).mean(1).view(-1)
-        means = T.cat((T.zeros(99), means))
-        plt.plot(means.numpy())
- 
-    plt.pause(0.1)  # pause a bit so that plots are updated
-    if is_ipython:
-#         display.clear_output(wait=True)
-        display.display(plt.gcf())
-# from dqn import *
 import time
 # import time, threading
 
@@ -45,7 +18,8 @@ def newcircle(space, x,y,r):
     
  
  
-def newship(space, size, mass,username,structure,colour): 
+def newship(space): 
+    global rulebook
     body = pymunk.Body()
     space.add(body)
  
@@ -54,18 +28,19 @@ def newship(space, size, mass,username,structure,colour):
     
     
     
-    shape = pymunk.Poly.create_box(body, (size, size), 0.0)
+    shape = pymunk.Poly.create_box(body, (rulebook['size'], rulebook['size']), 0.0)
     shape.filter = pymunk.ShapeFilter(group=1)
     shape.elasticity=0
     shape.friction=1
-    shape.mass = mass
+    shape.mass = rulebook['mass']
     shape.friction = 0.7
-    shape.username = username
-    shape.structure = structure
+    shape.username = rulebook['username']
+    shape.structure = rulebook['structure']
     shape.input = [False,False,False,False,False]
     shape.positionPrevx=1000
     shape.positionPrevy=460
     shape.done=False
+    shape.fuel = rulebook['fuel']
     
     space.add(shape)
     
@@ -113,8 +88,7 @@ def getInputs(ship):
 
 # ships["AI"] = newbox(space,80,100,"OrbitAI",struct,"AI")
 
-global mindistance
-mindistance = 455
+
 # global observation
  
 # observation = getInputs()
@@ -124,7 +98,6 @@ global steps
 steps = 0
 def calculatereward(AIship):
     global steps
-    global mindistance
     done=False
     
     distance = math.hypot(AIship.body.position.x-1000,AIship.body.position.y-1000)
@@ -134,7 +107,7 @@ def calculatereward(AIship):
     movement = math.hypot(AIship.body.position.x-AIship.positionPrevx,AIship.body.position.y-AIship.positionPrevy)
 
     # print(movement)
-    if distance > 5000 or distance < mindistance or (movement<0.001 and steps >=100):
+    if distance > rulebook['maxdistance'] or distance < min(rulebook['maxmindistance'],rulebook['minmindistance'] + steps*rulebook['mindistancegrowth']) or (movement<rulebook['minmovement'] and steps >=rulebook['minstepsmovement']) or (rulebook['maxanglekill'] and (AIship.body.angular_velocity < -rulebook['anglekill'] or AIship.body.angular_velocity > rulebook['anglekill'])):
         done = True
         # if (distance > 5000):
         #     print('Distance')
@@ -183,16 +156,17 @@ def update():
     global manualplanets
     global space
     global ships
+    global rulebook
     for key,ship in enumerate(ships):
         # print(ships[key].input)
         left,right,up,down,spacepress = ships[key].input
         if up:
-            ships[key].body.apply_impulse_at_local_point((0,-300), (0,0))
+            ships[key].body.apply_impulse_at_local_point((0,-rulebook['shipspeed']), (0,0))
         if left:
-            ships[key].body.angular_velocity += -0.01
+            ships[key].body.angular_velocity += -rulebook['shipanglespeed']
         else:
             if right:
-                ships[key].body.angular_velocity += 0.01
+                ships[key].body.angular_velocity += rulebook['shipanglespeed']
         
         for planet in planets:
             # print(ships[key])
@@ -210,11 +184,12 @@ def update():
             ships[key].body.angular_velocity = 0
             ships[key].body.angle = 0
         
-        # if ships[key].body.angular_velocity > 0.3:
-        #     ships[key].body.angular_velocity = 0.3
-        # else:
-        #     if ships[key].body.angular_velocity < -0.3:
-        #         ships[key].body.angular_velocity = -0.3
+        if rulebook['maxangle']:
+            if ships[key].body.angular_velocity > rulebook['maxanglestop']:
+                ships[key].body.angular_velocity = rulebook['maxanglestop']
+            else:
+                if ships[key].body.angular_velocity < -rulebook['maxanglestop']:
+                    ships[key].body.angular_velocity = -rulebook['maxanglestop']
     space.step(1)
  
 import pygame
@@ -224,30 +199,80 @@ global shipimage
 scalediv = 20
 shipimage = pygame.image.load('./static/spaceship.png')
 shipimage = pygame.transform.smoothscale(shipimage, (int(80 /scalediv), int(80/scalediv)))
+
+
+
+global rulebook
+rulebook = {
+
+    'maxstep' : 15000,
+    'forever':False,
+    'mass':100,
+    'size':80,
+    'shipspeed':300,
+    'shipanglespeed':0.1,
+    'minmindistance':455,
+    'maxmindistance':2000,
+    'mindistancegrowth': 0.4,
+    'maxdistance':5000,
+    'minmovement':0.01,
+    # time before minmovement can kill
+    'minstepsmovement':1000,
+
+    # Max angular velocity before dying
+    'maxanglekill':True,
+    'anglekill':0.5,
+
+    # Angular velocity limit that doesn't kill
+    'maxangle': False,
+    'maxanglestop': 0.3,
+
+
+    'username':'AIship',
+    'structure':{0:{0:'bullet'}},
+    'fuel':999999999,
+
+    'artmode' : True,
+    'centrex': 500,
+    'centrey': 200
+}
+
+
 def pyinit():
     global screen
+    global myfont
     pygame.init()
+    pygame.font.init()
+
     screen = pygame.display.set_mode((1000,540))
     clock = pygame.time.Clock()
     # global draw_options
-    # draw_options = pymunk.pygame_util.DrawOptions(screen)
+    # draw_options = pymunk.pygame_util.DrawOptions(screen)\
 def pyrender():
     global shipimage
     global screen
     global ships
     global scalediv
-    centrex = 500
-    centrey = 200
-    artmode = True
-    if not artmode:
-        screen.fill(pygame.color.THECOLORS["black"])
+    global steps
 
+    
+    if not rulebook['artmode']:
+        screen.fill(pygame.color.THECOLORS["black"])
+    
     for planet in planets:
-        pygame.draw.circle(screen,(100,100,100),(int(planet.body.position.x/scalediv)+centrex,int(planet.body.position.y/scalediv+centrey)),int(planet.radius/scalediv))
+        pygame.draw.circle(screen,(255,0,0),(int(planet.body.position.x/scalediv)+rulebook['centrex'],int(planet.body.position.y/scalediv+rulebook['centrey'])),int(min(rulebook['maxmindistance'],rulebook['minmindistance'] + steps*rulebook['mindistancegrowth'])/scalediv))
+        pygame.draw.circle(screen,(100,100,100),(int(planet.body.position.x/scalediv)+rulebook['centrex'],int(planet.body.position.y/scalediv+rulebook['centrey'])),int(planet.radius/scalediv))
     for ship in ships:
         tempimage = pygame.transform.rotate(shipimage,ship.body.angle)
-        screen.blit(shipimage, (int(ship.body.position.x/scalediv +centrex ),int(ship.body.position.y/scalediv)+centrey))
+        screen.blit(tempimage, (int(ship.body.position.x/scalediv +rulebook['centrex'] ),int(ship.body.position.y/scalediv)+rulebook['centrey']))
+    pygame.draw.rect(screen,(0,0,0),(10,100,100,50))
+    myfont = pygame.font.SysFont('Comic Sans MS', 30)
+    textsurface = myfont.render(str(round(100* steps/rulebook['maxstep']))+"%", False, (255, 255, 255))
+    screen.blit(textsurface,(10,100))
+    
 
+    pygame.draw.rect(screen,(255,255,255),(10,10,100 * steps/rulebook['maxstep'],50))
+    pygame.draw.rect(screen,(255,255,255),(10+100,10,5,50))
     pygame.display.flip()
  
 
@@ -258,15 +283,17 @@ import visualize
 import pickle
 global gen
 gen = 0    
+pyinit()
 def run_car(genomes, config):
     
     gameinit()
+    screen.fill(pygame.color.THECOLORS["black"])
     global space
-    global mindistance
     global ships
     global stats
     global generation
     global steps
+    global rulebook
     # Init NEAT
     nets = []
     ships = []
@@ -277,10 +304,10 @@ def run_car(genomes, config):
         g.fitness = 0
 
         # Init my cars
-        ships.append(newship(space,80,100,"OrbitAI",struct,"AI"))
+        ships.append(newship(space))
 
     # Init my game
-    pyinit()
+    # pyinit()
 
 
     # Main loop
@@ -292,14 +319,12 @@ def run_car(genomes, config):
       visualize.plot_stats(statistics=stats)
       # ualize.plot_stats()
     
-    mindistance = 455
     
     steps = 0
-    maxstep = 300_000
-    forever = False
-    while forever or steps <= maxstep:
+    
+    while rulebook['forever'] or steps <= rulebook['maxstep']:
 
-        if steps == maxstep:
+        if steps == rulebook['maxstep']:
             finished = 10_000
             print('Finished!')
         else:
@@ -310,13 +335,22 @@ def run_car(genomes, config):
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     screen.fill(pygame.color.THECOLORS["black"])
+                if event.key == pygame.K_m:
+                    screen.fill(pygame.color.THECOLORS["black"])
+                    rulebook['artmode'] = not rulebook['artmode']
+                    
         pyrender()
 
         # Input my data and get result from network
         for index, ship in enumerate(ships):
             output = nets[index].activate(getInputs(ship))
             i = output.index(max(output))
+            
             ship.input = actionlist[i]
+            if actionlist[i][2]:
+                ship.fuel -= 1
+            if ship.fuel <= 0:
+                ship.input[2] = False
 
         # Update car and fitness
         remain_ships = 0
@@ -342,8 +376,7 @@ def run_car(genomes, config):
         if remain_ships == 0:
             break
         
-        if mindistance<=2000:
-            mindistance += 0.4
+
         steps +=1
 
         

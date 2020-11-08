@@ -220,12 +220,12 @@ rulebook = {
     'minstepsmovement':1000,
 
     # Max angular velocity before dying
-    'maxanglekill':True,
+    'maxanglekill':False,
     'anglekill':0.5,
 
     # Angular velocity limit that doesn't kill
-    'maxangle': False,
-    'maxanglestop': 0.3,
+    'maxangle': True,
+    'maxanglestop': 0.1,
 
 
     'username':'AIship',

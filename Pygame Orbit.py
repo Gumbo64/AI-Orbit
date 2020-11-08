@@ -254,6 +254,7 @@ def pyrender():
     global ships
     global scalediv
     global steps
+    global generation
 
     
     if not rulebook['artmode']:
@@ -269,6 +270,10 @@ def pyrender():
     myfont = pygame.font.SysFont('Comic Sans MS', 30)
     textsurface = myfont.render(str(round(100* steps/rulebook['maxstep']))+"%", False, (255, 255, 255))
     screen.blit(textsurface,(10,100))
+
+    pygame.draw.rect(screen,(0,0,0),(10,200,100,50))
+    textsurface = myfont.render("Generation "+str(generation), False, (255, 255, 255))
+    screen.blit(textsurface,(10,200))
     
 
     pygame.draw.rect(screen,(255,255,255),(10,10,100 * steps/rulebook['maxstep'],50))

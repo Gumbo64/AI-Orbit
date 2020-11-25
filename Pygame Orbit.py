@@ -28,7 +28,7 @@ def newship(space):
     
     
     
-    shape = pymunk.Poly.create_box(body, (rulebook['size'], rulebook['size']), 0.0)
+    shape = pymunk.Poly.create_box(body, (rulebook['shipheight'], rulebook['shipwidth']), 0.0)
     shape.filter = pymunk.ShapeFilter(group=1)
     shape.elasticity=0
     shape.friction=1
@@ -190,16 +190,12 @@ def update():
             else:
                 if ships[key].body.angular_velocity < -rulebook['maxanglestop']:
                     ships[key].body.angular_velocity = -rulebook['maxanglestop']
+
+
     space.step(1)
  
 import pygame
 import pymunk.pygame_util   
-global scalediv
-global shipimage
-scalediv = 20
-shipimage = pygame.image.load('./static/spaceship.png')
-shipimage = pygame.transform.smoothscale(shipimage, (int(80 /scalediv), int(80/scalediv)))
-
 
 
 global rulebook
@@ -208,7 +204,8 @@ rulebook = {
     'maxstep' : 15000,
     'forever':False,
     'mass':100,
-    'size':80,
+    'shipwidth':800,
+    'shipheight':80,
     'shipspeed':300,
     'shipanglespeed':0.1,
     'minmindistance':455,
@@ -236,6 +233,13 @@ rulebook = {
     'centrex': 500,
     'centrey': 200
 }
+global scalediv
+global shipimage
+scalediv = 20
+shipimage = pygame.image.load('./static/spaceship.png')
+shipimage = pygame.transform.smoothscale(shipimage, (int(rulebook['shipwidth'] /scalediv), int(rulebook['shipheight']/scalediv)))
+
+
 
 
 def pyinit():

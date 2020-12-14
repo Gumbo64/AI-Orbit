@@ -204,7 +204,7 @@ rulebook = {
     'maxstep' : 15000,
     'forever':False,
     'mass':100,
-    'shipwidth':800,
+    'shipwidth':80,
     'shipheight':80,
     'shipspeed':300,
     'shipanglespeed':0.1,
@@ -222,7 +222,7 @@ rulebook = {
 
     # Angular velocity limit that doesn't kill
     'maxangle': True,
-    'maxanglestop': 0.1,
+    'maxanglestop': 0.3,
 
 
     'username':'AIship',
